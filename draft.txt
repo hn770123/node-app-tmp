@@ -4,3 +4,38 @@ node.js + express + vanilla js + sqlite3 のシンプルな構成のアプリケ
 * ユーザー/ロールの管理
 
 * jsonplaceholder.typicode.com へのGET/POST/PUT/DELETE 実行と結果表示
+
+---
+
+## 採用ライブラリ・バージョン構成案
+Windows環境での動作におけるビルドエラー（C++依存など）のリスクを最小化し、かつ「枯れた技術」として実績があり長期的に安定稼働する構成を想定しています。
+
+* **Node.js**: v20.x (LTS) または v22.x (LTS)
+  * 最新の安定版（LTS）。追加パッケージなしに `.env` の読み込み(`--env-file`)や、ファイルの監視(`--watch`)などの便利機能が使用可能です。
+* **Express**: v4.x
+  * Webフレームワークのデファクトスタンダード。v4は長年にわたり安定して稼働する実績のある「枯れた技術」です。
+* **sqlite3**: v5.x
+  * Windows用のコンパイル済みバイナリが提供されているため、C++ビルドツール（`node-gyp`）なしで動作し、導入の手間が不要です。
+* **bcryptjs**: v2.4.x
+  * パスワードハッシュ化用。`bcrypt` はC++のビルド環境（Pythonなど）を要求してWindowsでインストールエラーになることが多いため、ピュアJavaScript実装であるこちらを採用します。
+* **express-session**: v1.x
+  * 枯れたシンプルなセッション管理モジュール（ログイン管理用）。メモリへのセッション保存は開発用としては十分ですが、本番・永続化には `connect-sqlite3` を併用することも可能です。
+* **node-fetch**: 組み込みの `fetch` (v18以降標準) を使用
+  * jsonplaceholder.typicode.com との通信に使用するため、外部ライブラリの `axios` や `node-fetch` は追加せず、Node.jsの標準機能である `fetch` API を使用します。これにより依存関係を1つ減らします。
+
+## Node.jsで決定すべき設定項目
+
+1. **パッケージマネージャーの選定**: `npm`
+   * Node.js標準添付のnpmを使用。Yarnやpnpmのような追加ツールのインストールを不要にします。
+
+2. **モジュールシステム**: `CommonJS` (`require`) または `ES Modules` (`import`)
+   * 現状の主流になりつつある `ES Modules` (package.json に `"type": "module"` を記載) を推奨しますが、より歴史の長い `CommonJS` を使用することも可能です。プロジェクト開始時に統一しておく必要があります。
+
+3. **環境変数管理**: `Node.js標準機能`
+   * サードパーティ製の `dotenv` パッケージはインストールせず、Node.js v20から標準サポートされた `--env-file=.env` オプションを使用して環境変数を読み込みます。
+
+4. **開発用サーバーの起動**: `Node.js標準機能`
+   * 開発時のホットリロードにサードパーティ製の `nodemon` パッケージはインストールせず、Node.js v18以降の標準機能である `--watch` オプションを使用します（例: `node --watch app.js`）。
+
+5. **フロントエンドの構成（Vanilla JS）**:
+   * Expressの `express.static()` ミドルウェアを使用して `public/` ディレクトリ配下にあるHTML・CSS・JSファイル（Vanilla JS）を配信し、フロントエンドからはブラウザ標準の `fetch` API を用いてExpressのAPIエンドポイントにアクセスする構成とします。テンプレートエンジン（EJSなど）は不要です。
