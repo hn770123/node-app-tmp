@@ -209,6 +209,13 @@ function requireAdmin(req, res, next) {
 }
 
 /**
+ * JSONPlaceholder 連携画面のルート (認証必須)
+ */
+app.get('/jsonplaceholder', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'jsonplaceholder.html'));
+});
+
+/**
  * 未定義のルートへのアクセスを処理するミドルウェア
  *
  * @param {Object} req - Expressのリクエストオブジェクト

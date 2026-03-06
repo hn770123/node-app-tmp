@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSONPlaceholder テスト</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .button-group {
+      margin-bottom: 20px;
+    }
+    button {
+      margin-right: 10px;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+    .data-preview {
+      background-color: #f4f4f4;
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    #result-container {
+      margin-top: 20px;
+    }
+    #result-output {
+      background-color: #eef;
+      padding: 15px;
+      border: 1px solid #ccd;
+      border-radius: 4px;
+      min-height: 100px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>JSONPlaceholder 連携テスト</h2>
+
+    <div style="margin-bottom: 20px;">
+      <a href="/portal">← ポータルに戻る</a>
+    </div>
+
+    <div class="button-group">
+      <button id="btn-get">GET 実行</button>
+      <button id="btn-post">POST 実行</button>
+      <button id="btn-put">PUT 実行</button>
+      <button id="btn-delete">DELETE 実行</button>
+    </div>
+
+    <div class="data-preview">
+      <strong>【送信予定のデータ】</strong>
+      <p>POST / PUT 実行時に以下のデータが送信されます:</p>
+      <pre id="payload-preview"></pre>
+    </div>
+
+    <div id="result-container">
+      <h3>実行結果:</h3>
+      <pre id="result-output">実行結果がここに表示されます...</pre>
+    </div>
+
+  </div>
+
+  <script src="/js/jsonplaceholder.js"></script>
+</body>
+</html>
