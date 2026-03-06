@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ユーザー管理 - マイポータル</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* ユーザー管理画面用の追加スタイル */
+    .user-management-container {
+      max-width: 800px;
+      margin: 2rem auto;
+      background-color: #ffffff;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .btn {
+      padding: 0.5rem 1rem;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #2980b9;
+    }
+    .btn-danger {
+      background-color: #e74c3c;
+    }
+    .btn-danger:hover {
+      background-color: #c0392b;
+    }
+    .error-message {
+      color: red;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <h1>マイポータル</h1>
+    <div class="user-info">
+      <span id="username-display"></span>
+      <button id="logout-button" class="btn">ログアウト</button>
+    </div>
+  </div>
+
+  <div class="user-management-container">
+    <h2>ユーザー管理</h2>
+    <div id="error-message" class="error-message"></div>
+
+    <table id="users-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>ユーザー名</th>
+          <th>ロール</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- ユーザー一覧がここに挿入されます -->
+      </tbody>
+    </table>
+
+    <h3>新規ユーザー追加</h3>
+    <form id="add-user-form">
+      <div class="form-group">
+        <label for="new-username">ユーザー名:</label>
+        <input type="text" id="new-username" required>
+      </div>
+      <div class="form-group">
+        <label for="new-password">パスワード:</label>
+        <input type="password" id="new-password" required>
+      </div>
+      <div class="form-group">
+        <label for="new-role">ロール:</label>
+        <select id="new-role" required>
+          <option value="user">ユーザー</option>
+          <option value="admin">管理者</option>
+        </select>
+      </div>
+      <button type="submit" class="btn">追加</button>
+    </form>
+
+    <div style="margin-top: 2rem;">
+      <a href="/portal">ポータルに戻る</a>
+    </div>
+  </div>
+
+  <script src="/js/users.js"></script>
+</body>
+</html>
