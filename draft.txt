@@ -1,0 +1,6 @@
+node.js + express + vanilla js + sqlite3 のシンプルな構成のアプリケーション
+
+* ログイン
+* ユーザー/ロールの管理
+
+* jsonplaceholder.typicode.com へのGET/POST/PUT/DELETE 実行と結果表示
