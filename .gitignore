@@ -1,2 +1,6 @@
 node_modules/
 .env
+database.sqlite
+sessions.sqlite
+cookie.txt
+test-login.sh
