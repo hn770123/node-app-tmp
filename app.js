@@ -9,11 +9,15 @@
 const express = require('express');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
-const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const db = require('./db');
+const { requireAuth, requireAdmin } = require('./middlewares/auth');
 
 const app = express();
+
+const usersRouter = require('./routes/users');
+const jsonplaceholderRouter = require('./routes/jsonplaceholder');
 
 // 環境変数からポート番号を取得。指定がない場合はデフォルトで3000番を使用する
 const PORT = process.env.PORT || 3000;
@@ -21,16 +25,6 @@ const PORT = process.env.PORT || 3000;
 // JSONとURLエンコードされたボディをパースするためのミドルウェア
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// データベース接続の初期化
-const dbPath = path.resolve(__dirname, 'database.sqlite');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('データベースへの接続に失敗しました:', err.message);
-  } else {
-    console.log('データベースに接続しました:', dbPath);
-  }
-});
 
 // セッション管理ミドルウェアの設定
 app.use(session({
@@ -50,20 +44,6 @@ app.use(session({
 
 // 静的ファイルの提供（認証不要なアセットなど）
 app.use(express.static(path.join(__dirname, 'public')));
-
-/**
- * 認証ミドルウェア
- *
- * @description
- * ユーザーがログインしているか確認し、ログインしていない場合はログイン画面にリダイレクトします。
- */
-function requireAuth(req, res, next) {
-  if (req.session && req.session.user) {
-    next();
-  } else {
-    res.redirect('/login');
-  }
-}
 
 /**
  * ログイン画面のルート
@@ -189,31 +169,17 @@ app.get('/api/me', (req, res) => {
 });
 
 /**
- * 管理者権限チェックミドルウェア
- *
- * @description
- * ユーザーが管理者(admin)であるか確認し、そうでない場合は403 Forbiddenを返します。
- */
-function requireAdmin(req, res, next) {
-  if (req.session && req.session.user && req.session.user.role === 'admin') {
-    next();
-  } else {
-    // APIリクエストの場合はJSONで、通常の画面遷移の場合はHTMLでエラーを返すなどの対応が考えられます。
-    // 今回は要件に従い「権限がない旨を表示」するため、適切なステータスコードを返します。
-    if (req.path.startsWith('/api/')) {
-      res.status(403).json({ error: '権限がありません' });
-    } else {
-      res.status(403).send('<h2>権限がありません</h2><p>このページにアクセスする権限がありません。</p><a href="/portal">ポータルに戻る</a>');
-    }
-  }
-}
-
-/**
  * JSONPlaceholder 連携画面のルート (認証必須)
  */
 app.get('/jsonplaceholder', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'jsonplaceholder.html'));
 });
+
+// ユーザー保守画面とAPIのルーターをマウント
+app.use('/', usersRouter);
+
+// JSONPlaceholder用サーバサイドAPIルーターをマウント
+app.use('/', jsonplaceholderRouter);
 
 /**
  * 未定義のルートへのアクセスを処理するミドルウェア
@@ -223,103 +189,6 @@ app.get('/jsonplaceholder', requireAuth, (req, res) => {
  * @description
  * 定義されていないエンドポイントへのアクセスに対して404 Not Foundを返します。
  */
-
-/**
- * ユーザー管理画面のルート (管理者のみ)
- */
-app.get('/users', requireAuth, requireAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'users.html'));
-});
-
-/**
- * ユーザー一覧取得 API (管理者のみ)
- */
-app.get('/api/users', requireAuth, requireAdmin, (req, res) => {
-  db.all('SELECT id, username, role FROM users', [], (err, rows) => {
-    if (err) {
-      console.error('データベースエラー:', err);
-      return res.status(500).json({ error: 'ユーザーの取得に失敗しました' });
-    }
-    res.json({ users: rows });
-  });
-});
-
-/**
- * ユーザー作成 API (管理者のみ)
- */
-app.post('/api/users', requireAuth, requireAdmin, (req, res) => {
-  const { username, password, role } = req.body;
-  if (!username || !password || !role) {
-    return res.status(400).json({ error: 'すべての項目を入力してください' });
-  }
-
-  const salt = bcrypt.genSaltSync(10);
-  const hashedPassword = bcrypt.hashSync(password, salt);
-
-  db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, hashedPassword, role], function(err) {
-    if (err) {
-      console.error('ユーザー作成エラー:', err);
-      if (err.message.includes('UNIQUE constraint failed')) {
-        return res.status(400).json({ error: '既に存在するユーザー名です' });
-      }
-      return res.status(500).json({ error: 'ユーザーの作成に失敗しました' });
-    }
-    res.json({ message: 'ユーザーを作成しました', user: { id: this.lastID, username, role } });
-  });
-});
-
-/**
- * ユーザー更新 API (管理者のみ)
- */
-app.put('/api/users/:id', requireAuth, requireAdmin, (req, res) => {
-  const { id } = req.params;
-  const { username, password, role } = req.body;
-
-  if (!username || !role) {
-    return res.status(400).json({ error: 'ユーザー名とロールは必須です' });
-  }
-
-  if (password) {
-    const salt = bcrypt.genSaltSync(10);
-    const hashedPassword = bcrypt.hashSync(password, salt);
-    db.run('UPDATE users SET username = ?, password = ?, role = ? WHERE id = ?', [username, hashedPassword, role, id], function(err) {
-      if (err) {
-        console.error('ユーザー更新エラー:', err);
-        return res.status(500).json({ error: 'ユーザーの更新に失敗しました' });
-      }
-      res.json({ message: 'ユーザーを更新しました' });
-    });
-  } else {
-    db.run('UPDATE users SET username = ?, role = ? WHERE id = ?', [username, role, id], function(err) {
-      if (err) {
-        console.error('ユーザー更新エラー:', err);
-        return res.status(500).json({ error: 'ユーザーの更新に失敗しました' });
-      }
-      res.json({ message: 'ユーザーを更新しました' });
-    });
-  }
-});
-
-/**
- * ユーザー削除 API (管理者のみ)
- */
-app.delete('/api/users/:id', requireAuth, requireAdmin, (req, res) => {
-  const { id } = req.params;
-
-  // 自分自身は削除できないようにする
-  if (req.session.user.id == id) {
-    return res.status(400).json({ error: '自分自身は削除できません' });
-  }
-
-  db.run('DELETE FROM users WHERE id = ?', [id], function(err) {
-    if (err) {
-      console.error('ユーザー削除エラー:', err);
-      return res.status(500).json({ error: 'ユーザーの削除に失敗しました' });
-    }
-    res.json({ message: 'ユーザーを削除しました' });
-  });
-});
-
 app.use((req, res) => {
   res.status(404).send('Not Found');
 });

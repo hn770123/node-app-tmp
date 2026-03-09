@@ -1,6 +1,2 @@
-
-> app@1.0.0 start
-> node --env-file=.env app.js
-
 Server is running on http://localhost:3000
 データベースに接続しました: /app/database.sqlite
